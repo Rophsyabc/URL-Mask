@@ -14,9 +14,53 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ─── Short Link Map ───────────────────────────────────────────────────────────
+// Add as many slug → URL pairs as you need.
+// Visit yourdomain.com/<slug> to proxy that site.
+// Example: yourdomain.com/jobs  →  https://www.jobharder.com
+const SHORT_LINKS = {
+    'jobs':  'https://www.jobharder.com',
+    // 'deals': 'https://www.example.com',   // ← add more here
+};
+
 // ─── Route: Homepage ──────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
     res.render('index', { query: '' });
+});
+
+// ─── Route: Short Link Proxy ──────────────────────────────────────────────────
+// Fetches the target page server-side and streams it back so YOUR domain
+// stays in the visitor's URL bar — the destination site is never shown.
+app.get('/:slug', async (req, res, next) => {
+    const target = SHORT_LINKS[req.params.slug];
+
+    // If slug isn't in the map, fall through to Express's 404 handler
+    if (!target) return next();
+
+    try {
+        const upstream = await axios.get(target, {
+            timeout: 10_000,
+            headers: {
+                // Appear as a normal browser so sites don't block the request
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,*/*',
+            },
+            // Follow redirects (e.g. http → https)
+            maxRedirects: 5,
+        });
+
+        // Forward the content-type so the browser renders it correctly
+        const contentType = upstream.headers['content-type'] || 'text/html';
+        res.setHeader('Content-Type', contentType);
+        res.send(upstream.data);
+
+    } catch (err) {
+        console.error(`[Proxy Error] ${target} →`, err.message);
+        res.status(502).send(`
+            <h2 style="font-family:sans-serif;padding:40px;">
+                ⚠️ Could not load the page. The destination may be temporarily unavailable.
+            </h2>`);
+    }
 });
 
 // ─── Route: Search Results (Masking Engine) ───────────────────────────────────
