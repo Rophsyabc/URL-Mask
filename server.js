@@ -68,6 +68,7 @@ async function resolveUrlAndMetadata(rawUrl) {
             searchTerm: parsed.hostname.replace(/^www\./, ''),
             title,
             snippet,
+            favicon: `https://www.google.com/s2/favicons?domain=${parsed.hostname}&sz=32`,
             displayed_link: `${parsed.protocol}//${parsed.hostname}`
         };
     } catch (_) {
@@ -79,6 +80,7 @@ async function resolveUrlAndMetadata(rawUrl) {
                 searchTerm: hostClean,
                 title: `${hostClean.split('.')[0].toUpperCase()} - Official Website`,
                 snippet: `Visit ${parsed.hostname} for more information and updates.`,
+                favicon: `https://www.google.com/s2/favicons?domain=${parsed.hostname}&sz=32`,
                 displayed_link: target
             };
         } catch (e) {
@@ -109,7 +111,8 @@ app.get('/search', async (req, res) => {
                 title: resolved.title,
                 link: resolved.finalUrl,
                 displayed_link: resolved.displayed_link,
-                snippet: resolved.snippet
+                snippet: resolved.snippet,
+                favicon: resolved.favicon
             };
             // Search Google for the target domain rather than the raw shortlink string
             apiSearchQuery = resolved.searchTerm || rawQuery;
