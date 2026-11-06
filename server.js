@@ -14,12 +14,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Short Link Map ───────────────────────────────────────────────────────────
-// Add as many slug → URL pairs as you need.
-// Visit yourdomain.com/<slug> to proxy that site.
+// ─── Target Destination & Short Link Configuration ───────────────────────────
+const DEFAULT_TARGET_URL     = process.env.TARGET_URL     || 'https://www.jobharder.com';
+const DEFAULT_TARGET_TITLE   = process.env.TARGET_TITLE   || 'JobHarder - Top Career Opportunities & Job Search';
+const DEFAULT_TARGET_SNIPPET = process.env.TARGET_SNIPPET || 'Search millions of jobs online to find the next step in your career. Find high-paying remote and local job listings on JobHarder.';
+
 const SHORT_LINKS = {
-    'jobs':  'https://www.jobharder.com',
-    'WNc3u': 'https://www.jobharder.com',
+    'jobs':  DEFAULT_TARGET_URL,
+    'WNc3u': DEFAULT_TARGET_URL,
 };
 
 // ─── Helpers: URL detection & resolution ──────────────────────────────────────
@@ -28,12 +30,34 @@ function isUrl(str) {
     const trimmed = str.trim();
     return /^(https?:\/\/|www\.)[^\s/$.?#].[^\s]*$/i.test(trimmed) ||
            /^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/[^\s]*)?$/i.test(trimmed) ||
-           trimmed.includes('shorturl.at/') ||
-           trimmed.includes('bit.ly/');
+           trimmed.includes('shorturl.at') ||
+           trimmed.includes('bit.ly') ||
+           trimmed.includes('jobharder');
 }
 
 async function resolveUrlAndMetadata(rawUrl) {
     let target = rawUrl.trim();
+
+    // 1. Check if the query matches any configured slug or shortlink (e.g. WNc3u, jobs)
+    for (const [slug, dest] of Object.entries(SHORT_LINKS)) {
+        if (target.includes(slug) || target.toLowerCase() === slug.toLowerCase()) {
+            target = dest;
+            break;
+        }
+    }
+
+    // 2. Specific handler for JobHarder / job search targets
+    if (target.toLowerCase().includes('jobharder') || target.toLowerCase().includes('wnc3u')) {
+        return {
+            finalUrl:       DEFAULT_TARGET_URL,
+            searchTerm:     'jobs hiring career search',
+            title:          DEFAULT_TARGET_TITLE,
+            snippet:        DEFAULT_TARGET_SNIPPET,
+            favicon:        'https://www.google.com/s2/favicons?domain=jobharder.com&sz=32',
+            displayed_link: 'https://www.jobharder.com'
+        };
+    }
+
     if (!/^https?:\/\//i.test(target)) {
         target = 'https://' + target;
     }
