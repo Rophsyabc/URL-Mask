@@ -1,0 +1,16 @@
+{
+  "name": "google-mask-proxy",
+  "version": "1.0.0",
+  "description": "A URL-masking search proxy powered by SerpApi and Express/EJS.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2"
+  }
+}
+

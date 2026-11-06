@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= query %> - Search Results
+    </title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+    <!-- ── Sticky branded header — short domain stays in URL bar ── -->
+    <header class="results-header">
+        <a href="/" class="brand-logo" style="text-decoration:none;">SoarDevEngine</a>
+
+        <form action="/search" method="GET" class="search-form">
+            <div class="search-box-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="#9aa0a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="flex-shrink:0;">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input type="text" name="q" class="search-input" value="<%= query %>" autocomplete="off" required>
+            </div>
+        </form>
+    </header>
+
+    <!-- ── Main SERP Feed ── -->
+    <main class="serp-container">
+
+        <% if (locals.error) { %>
+            <p class="state-message">⚠️ <%= error %>
+            </p>
+
+            <% } else if (results.length> 0) { %>
+
+                <!-- Result count -->
+                <% if (searchInfo && searchInfo.total_results) { %>
+                    <p class="result-stats">
+                        About <%= searchInfo.total_results %> results
+                            (<%= searchInfo.time_taken_displayed %>)
+                    </p>
+                    <% } %>
+
+                        <!-- Organic results -->
+                        <% results.forEach(function(item, i) { %>
+                            <article class="result-item" style="animation-delay: <%= i * 40 %>ms">
+
+                                <!-- Source meta row (favicon + displayed URL) -->
+                                <div class="result-meta">
+                                    <% if (item.favicon) { %>
+                                        <img src="<%= item.favicon %>" class="result-favicon" alt="" loading="lazy"
+                                            onerror="this.style.display='none'">
+                                        <% } %>
+                                            <span class="result-displayed-url">
+                                                <%= item.displayed_link || item.link %>
+                                            </span>
+                                </div>
+
+                                <!-- Title — opens real target in new tab -->
+                                <a href="<%= item.link %>" class="result-title-link" target="_blank"
+                                    rel="noopener noreferrer">
+                                    <%- item.title %>
+                                </a>
+
+                                <!-- Snippet -->
+                                <% if (item.snippet) { %>
+                                    <p class="result-snippet"><%- item.snippet %></p>
+                                    <% } %>
+
+                            </article>
+                            <% }); %>
+
+                                <!-- Related searches panel -->
+                                <% if (relatedSearches && relatedSearches.length> 0) { %>
+                                    <section class="related-searches">
+                                        <h3>Related searches</h3>
+                                        <div class="related-grid">
+                                            <% relatedSearches.slice(0, 8).forEach(function(rel) { %>
+                                                <a href="/search?q=<%= encodeURIComponent(rel.query) %>"
+                                                    class="related-item">
+                                                    <!-- Search icon -->
+                                                    <svg class="related-icon" xmlns="http://www.w3.org/2000/svg"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <circle cx="11" cy="11" r="8" />
+                                                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                                    </svg>
+                                                    <%= rel.query %>
+                                                </a>
+                                                <% }); %>
+                                        </div>
+                                    </section>
+                                    <% } %>
+
+                                        <% } else { %>
+                                            <p class="state-message">
+                                                No results found for <strong>"<%= query %>"</strong>.<br>
+                                                Try different or fewer keywords.
+                                            </p>
+                                            <% } %>
+
+    </main>
+
+</body>
+
+</html>
